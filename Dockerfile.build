@@ -1,0 +1,16 @@
+# syntax=docker/dockerfile:1.7
+FROM eclipse-temurin:25-jdk AS builder
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends git ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /work
+COPY . .
+
+RUN --mount=type=cache,target=/root/.gradle \
+    --mount=type=cache,target=/work/common/webapp/node_modules \
+    ./gradlew --no-daemon release
+
+FROM scratch AS export
+COPY --from=builder /work/build/release/ /

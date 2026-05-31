@@ -1,0 +1,12 @@
+# syntax=docker/dockerfile:1.7
+FROM node:20.14.0 AS builder
+
+WORKDIR /work
+COPY common/webapp/package.json common/webapp/package-lock.json ./
+RUN --mount=type=cache,target=/root/.npm npm ci
+
+COPY common/webapp/ ./
+RUN --mount=type=cache,target=/root/.npm npm run build
+
+FROM scratch AS export
+COPY --from=builder /work/dist/ /

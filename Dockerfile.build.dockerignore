@@ -1,0 +1,14 @@
+.gradle/
+**/.gradle/
+build/
+**/build/
+**/node_modules/
+common/webapp/dist/
+common/src/main/resources/de/bluecolored/bluemap/webapp.zip
+core/src/main/resources/de/bluecolored/bluemap/resourceExtensions.zip
+dist/
+.idea/
+*.iml
+.run/
+runs/
+logs/

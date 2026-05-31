@@ -60,6 +60,7 @@ export class BlueMapApp {
         /** @type {{
          *      version: string,
          *      useCookies: boolean,
+         *      enableLiveUpdates: boolean,
          *      defaultToFlatView: boolean,
          *      resolutionDefault: number,
          *      minZoomDistance: number,
@@ -336,6 +337,7 @@ export class BlueMapApp {
             this.settings = {
                 version: "?",
                 useCookies: false,
+                enableLiveUpdates: true,
                 defaultToFlatView: false,
                 resolutionDefault: 1.0,
                 minZoomDistance: 5,
@@ -404,6 +406,7 @@ export class BlueMapApp {
 
         const map = this.mapViewer.map;
         if (!map) return;
+        if (!this.settings.enableLiveUpdates) return;
 
         this.playerMarkerManager = new PlayerMarkerManager(
             this.mapViewer.markers,
@@ -428,6 +431,7 @@ export class BlueMapApp {
 
         const map = this.mapViewer.map;
         if (!map) return;
+        if (!this.settings.enableLiveUpdates) return;
 
         this.markerFileManager = new NormalMarkerManager(this.mapViewer.markers, map.data.liveDataRoot + "/live/markers.json", this.events);
         return this.markerFileManager.update()

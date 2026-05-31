@@ -123,6 +123,8 @@ public class WebFilesManager {
 
         private boolean useCookies = true;
 
+        private boolean enableLiveUpdates = true;
+
         private boolean defaultToFlatView = false;
 
         private String startLocation = null;
@@ -149,6 +151,7 @@ public class WebFilesManager {
 
         public void setFrom(WebappConfig config) {
             this.useCookies = config.isUseCookies();
+            this.enableLiveUpdates = config.isEnableLiveUpdates();
             this.defaultToFlatView = config.isDefaultToFlatView();
             this.startLocation = config.getStartLocation().orElse(null);
             this.resolutionDefault = config.getResolutionDefault();

@@ -44,6 +44,8 @@ public class WebappConfig {
 
     private boolean useCookies = true;
 
+    private boolean enableLiveUpdates = true;
+
     private boolean defaultToFlatView = false;
 
     private String startLocation = null;
