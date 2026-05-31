@@ -28,7 +28,9 @@
   font-style: normal;
   font-display: swap;
   font-weight: 100 900;
-  src: local("Quicksand"), url("./fonts/Quicksand.ttf") format('truetype-variations');
+  src: local("Quicksand"),
+       url("./fonts/Quicksand.woff2") format('woff2-variations'),
+       url("./fonts/Quicksand.ttf") format('truetype-variations');
 }
 
 @import "variables.scss";
