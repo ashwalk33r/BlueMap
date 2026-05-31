@@ -18,7 +18,9 @@ export default defineConfig({
         __INTLIFY_PROD_DEVTOOLS__: false,
     },
     build: {
-        sourcemap: true
+        // Ship sourcemaps only when explicitly requested (VITE_SOURCEMAP=true).
+        // Default off: the prod .js.map is ~3.6 MB of dead weight in dist/jar/webroot.
+        sourcemap: process.env.VITE_SOURCEMAP === 'true'
     },
     server: {
         proxy: {

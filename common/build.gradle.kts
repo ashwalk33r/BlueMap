@@ -33,7 +33,10 @@ tasks.register("buildWebapp", type = NpmTask::class) {
 
 tasks.register("zipWebapp", type = Zip::class) {
     dependsOn ("buildWebapp")
-    from (fileTree("webapp/dist/"))
+    from (fileTree("webapp/dist/")) {
+        // never ship sourcemaps in the jar/webroot, even if a build emitted them
+        exclude("**/*.map")
+    }
     archiveFileName = "webapp.zip"
     destinationDirectory = file("src/main/resources/de/bluecolored/bluemap/")
 
