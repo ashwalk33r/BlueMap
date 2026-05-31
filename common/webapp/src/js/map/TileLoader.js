@@ -72,7 +72,7 @@ export class TileLoader {
                         return;
                     }
 
-                    let geometry = this.bufferGeometryLoader.parse(data);
+                    let geometry = await this.bufferGeometryLoader.parseAsync(data);
 
                     let object = new Mesh(geometry, this.material);
 

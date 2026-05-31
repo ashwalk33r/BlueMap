@@ -16,6 +16,7 @@
   "liveDataRoot": "maps",
   "tileLoadConcurrency": 16,
   "tileLoadBackoffMs": 200,
+  "tileParseInWorker": true,
   "maps": [],
   "scripts": [],
   "styles": []
