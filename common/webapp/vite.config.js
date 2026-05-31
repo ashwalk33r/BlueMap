@@ -2,10 +2,22 @@ import {fileURLToPath, URL} from 'node:url'
 
 import {defineConfig} from 'vite'
 import vue from '@vitejs/plugin-vue'
+import viteCompression from 'vite-plugin-compression'
+
+// Precompress build output so nginx can serve max-level static .br/.gz via
+// brotli_static/gzip_static (offloads on-the-fly compression). VITE_PRECOMPRESS:
+//   both (default) | brotli | gzip | off
+const precompress = (process.env.VITE_PRECOMPRESS || 'both').toLowerCase()
+const COMPRESS_FILTER = /\.(js|mjs|json|css|html|svg|conf|webmanifest)$/i
+const compressionPlugins = []
+if (precompress === 'both' || precompress === 'gzip')
+    compressionPlugins.push(viteCompression({algorithm: 'gzip', ext: '.gz', filter: COMPRESS_FILTER, threshold: 1024, deleteOriginFile: false}))
+if (precompress === 'both' || precompress === 'brotli')
+    compressionPlugins.push(viteCompression({algorithm: 'brotliCompress', ext: '.br', filter: COMPRESS_FILTER, threshold: 1024, deleteOriginFile: false}))
 
 // noinspection JSUnusedGlobalSymbols
 export default defineConfig({
-    plugins: [vue()],
+    plugins: [vue(), ...compressionPlugins],
     base: './',
     resolve: {
         alias: {
