@@ -3,6 +3,7 @@ import {fileURLToPath, URL} from 'node:url'
 import {defineConfig} from 'vite'
 import vue from '@vitejs/plugin-vue'
 import viteCompression from 'vite-plugin-compression'
+import {VitePWA} from 'vite-plugin-pwa'
 
 // Precompress build output so nginx can serve max-level static .br/.gz via
 // brotli_static/gzip_static (offloads on-the-fly compression). VITE_PRECOMPRESS:
@@ -15,9 +16,31 @@ if (precompress === 'both' || precompress === 'gzip')
 if (precompress === 'both' || precompress === 'brotli')
     compressionPlugins.push(viteCompression({algorithm: 'brotliCompress', ext: '.br', filter: COMPRESS_FILTER, threshold: 1024, deleteOriginFile: false}))
 
+// Service worker: cache-first precache of the immutable hashed APP SHELL only
+// (js/css/html/woff2). It must NEVER cache map tiles (/maps/**) or live/*.json —
+// those stay network-only. Gated by VITE_PWA (default on); autoUpdate pushes a new
+// precache in the background on each deploy. Set VITE_PWA=false to ship no SW.
+const pwaEnabled = (process.env.VITE_PWA || 'true').toLowerCase() !== 'false'
+const pwaPlugins = pwaEnabled ? [VitePWA({
+    registerType: 'autoUpdate',
+    injectRegister: 'auto',
+    manifest: false, // keep the existing public/assets/manifest.webmanifest
+    workbox: {
+        globPatterns: ['index.html', 'assets/*.{js,css,woff2}'],
+        globIgnores: ['**/*.map', 'sql.php'],
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
+        navigateFallback: null, // hash-routed SPA; don't fabricate navigations
+        // belt-and-suspenders: never let the SW serve these dynamic paths
+        navigateFallbackDenylist: [/\/maps\//, /\/settings\.json$/, /\/live\//],
+        runtimeCaching: [], // no tile/live runtime caching by design
+    },
+})] : []
+
 // noinspection JSUnusedGlobalSymbols
 export default defineConfig({
-    plugins: [vue(), ...compressionPlugins],
+    plugins: [vue(), ...compressionPlugins, ...pwaPlugins],
     base: './',
     resolve: {
         alias: {
