@@ -28,6 +28,7 @@ import {MapControls} from "./controls/map/MapControls";
 import {FreeFlightControls} from "./controls/freeflight/FreeFlightControls";
 import {MathUtils, Vector3} from "three";
 import {Map as BlueMapMap} from "./map/Map";
+import {TileManager} from "./map/TileManager";
 import {alert, animate, EasingFunctions} from "./util/Utils";
 import {MainMenu} from "./MainMenu";
 import {PopupMarker} from "./PopupMarker";
@@ -350,6 +351,10 @@ export class BlueMapApp {
                 lowresSliderMin: 500,
                 mapDataRoot: "maps",
                 liveDataRoot: "maps",
+                // tile-loading throughput (per TileManager). Raised from the legacy 8/1000ms
+                // so the HTTP/2 origin is actually saturated; overridable via settings.json.
+                tileLoadConcurrency: 16,
+                tileLoadBackoffMs: 200,
                 maps: [
                     "world",
                     "world_the_end",
@@ -359,6 +364,12 @@ export class BlueMapApp {
                 styles: [],
                 ...loaded
             };
+
+            // apply tile-loading tuning (defaults above, overridable from settings.json)
+            if (Number.isFinite(this.settings.tileLoadConcurrency))
+                TileManager.maxConcurrentLoads = Math.max(1, this.settings.tileLoadConcurrency);
+            if (Number.isFinite(this.settings.tileLoadBackoffMs))
+                TileManager.loadBackoffMs = Math.max(0, this.settings.tileLoadBackoffMs);
         }
 
         return this.settings;

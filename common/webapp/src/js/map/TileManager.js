@@ -32,6 +32,13 @@ export class TileManager {
     static tileMapSize = 100;
     static tileMapHalfSize = TileManager.tileMapSize / 2;
 
+    // Max tiles loading concurrently per manager, and the fallback re-check delay
+    // when that cap is hit. Tunable via settings.json (tileLoadConcurrency /
+    // tileLoadBackoffMs); BlueMapApp sets these after loading settings.
+    // Legacy values were 8 / 1000ms — they left the (HTTP/2) origin idle.
+    static maxConcurrentLoads = 8;
+    static loadBackoffMs = 1000;
+
     /**
      * @param tileLoader {TileLoader | LowresTileLoader}
      * @param onTileLoad {function(Tile)}
@@ -138,10 +145,10 @@ export class TileManager {
 
         if (this.loadTimeout) clearTimeout(this.loadTimeout);
 
-        if (this.currentlyLoading < 8) {
+        if (this.currentlyLoading < TileManager.maxConcurrentLoads) {
             this.loadTimeout = setTimeout(this.loadCloseTiles, 0);
         } else {
-            this.loadTimeout = setTimeout(this.loadCloseTiles, 1000);
+            this.loadTimeout = setTimeout(this.loadCloseTiles, TileManager.loadBackoffMs);
         }
     }
 

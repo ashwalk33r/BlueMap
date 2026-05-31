@@ -14,6 +14,8 @@
   "lowresSliderMin": 500,
   "mapDataRoot": "maps",
   "liveDataRoot": "maps",
+  "tileLoadConcurrency": 16,
+  "tileLoadBackoffMs": 200,
   "maps": [],
   "scripts": [],
   "styles": []
