@@ -17,6 +17,7 @@
   "tileLoadConcurrency": 16,
   "tileLoadBackoffMs": 200,
   "tileParseInWorker": true,
+  "pauseUpdatesWhenHidden": true,
   "maps": [],
   "scripts": [],
   "styles": []

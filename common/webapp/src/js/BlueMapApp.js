@@ -125,6 +125,7 @@ export class BlueMapApp {
 
         this.hashUpdateTimeout = null;
         this.viewAnimation = null;
+        this._liveUpdatesPaused = false;
     }
 
 
@@ -179,6 +180,13 @@ export class BlueMapApp {
         window.addEventListener("hashchange", this.loadPageAddress);
         this.events.addEventListener("bluemapCameraMoved", this.cameraMoved);
         this.events.addEventListener("bluemapMapInteraction", this.mapInteraction);
+
+        // pause live-data polling while the tab is hidden / frozen (bfcache) — saves the
+        // user's bandwidth and, at scale, a lot of needless players.json/markers.json hits
+        // on the server. Resumes (with an immediate refresh) when visible again.
+        document.addEventListener("visibilitychange", this.handleVisibilityChange);
+        window.addEventListener("pagehide", this.pauseLiveUpdates);
+        window.addEventListener("pageshow", this.handleVisibilityChange);
 
         // start app update loop
         if(this.updateLoop) clearTimeout(this.updateLoop);
@@ -357,6 +365,7 @@ export class BlueMapApp {
                 tileLoadConcurrency: 16,
                 tileLoadBackoffMs: 200,
                 tileParseInWorker: true,
+                pauseUpdatesWhenHidden: true,
                 maps: [
                     "world",
                     "world_the_end",
@@ -412,6 +421,34 @@ export class BlueMapApp {
                 () => reject(`Failed to load '${this.fileUrl}'!`)
             )
         });
+    }
+
+    /** Pause/resume the marker polling based on tab visibility (gated by pauseUpdatesWhenHidden). */
+    handleVisibilityChange = () => {
+        if (this.settings && this.settings.pauseUpdatesWhenHidden === false) return;
+        if (document.hidden) this.pauseLiveUpdates();
+        else this.resumeLiveUpdates();
+    }
+
+    pauseLiveUpdates = () => {
+        if (this._liveUpdatesPaused) return;
+        this._liveUpdatesPaused = true;
+        this.playerMarkerManager?.setAutoUpdateInterval(0);
+        this.markerFileManager?.setAutoUpdateInterval(0);
+    }
+
+    resumeLiveUpdates = () => {
+        if (!this._liveUpdatesPaused) return;
+        this._liveUpdatesPaused = false;
+        // restore the configured cadences and refresh immediately (data went stale while hidden)
+        if (this.playerMarkerManager) {
+            this.playerMarkerManager.setAutoUpdateInterval(1000);
+            this.playerMarkerManager.update().catch(() => {});
+        }
+        if (this.markerFileManager) {
+            this.markerFileManager.setAutoUpdateInterval(1000 * 10);
+            this.markerFileManager.update().catch(() => {});
+        }
     }
 
     initPlayerMarkerManager() {
