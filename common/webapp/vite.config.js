@@ -32,7 +32,20 @@ export default defineConfig({
     build: {
         // Ship sourcemaps only when explicitly requested (VITE_SOURCEMAP=true).
         // Default off: the prod .js.map is ~3.6 MB of dead weight in dist/jar/webroot.
-        sourcemap: process.env.VITE_SOURCEMAP === 'true'
+        sourcemap: process.env.VITE_SOURCEMAP === 'true',
+        rollupOptions: {
+            output: {
+                // Split vendor code so chunks download in parallel and cache independently
+                // (three.js rarely changes -> long-lived cache; app code changes often).
+                manualChunks(id) {
+                    if (!id.includes('node_modules')) return
+                    if (id.includes('/three/')) return 'three'
+                    if (id.includes('/vue/') || id.includes('/@vue/') ||
+                        id.includes('/vue-i18n/') || id.includes('/@intlify/')) return 'vue'
+                    return 'vendor'
+                }
+            }
+        }
     },
     server: {
         proxy: {
