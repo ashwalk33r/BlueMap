@@ -5,7 +5,31 @@
 
 REQUIRED_DEPLOY_VARS := DEPLOY_RSYNC_HOST DEPLOY_SSH_HOST DEPLOY_ROOT DEPLOY_USER DEPLOY_GROUP
 
-.PHONY: build webapp fmt dos2unix clean deploy deploy-fspermissions check-deploy-env
+.PHONY: build webapp fmt dos2unix clean deploy deploy-fspermissions check-deploy-env bench-fe bench-fe-concurrency
+
+# webapp-perf harness root (shared infra: serve/, bench/, lib/coord.sh, results/).
+WEBAPP_PERF_ROOT ?= /home/ubuntu24/webapp-perf
+
+# Frontend perf bench (serial: serializes serve+Playwright+size-report under the bench mutex).
+# Authoritative post-merge integrity check for the webapp-perf Round-2 work.
+#   make bench-fe DIST=$(PWD)/common/webapp/dist LABEL=postmerge
+DIST ?= $(PWD)/common/webapp/dist
+LABEL ?= fe-run
+bench-fe:
+	bash $(WEBAPP_PERF_ROOT)/bench/run-fe.sh "$(DIST)" "$(LABEL)"
+
+# tileLoadConcurrency knee sweep under the 1 Gbit/s cap (from U-D). Serializes the whole
+# serve+bench cycle via the single-holder `bench` mutex (lib/coord.sh acquire_lock), like
+# bench-fe. Apply the network cap first with bench/throttle.sh; SWEEP_* env tune the run.
+# Result: $(WEBAPP_PERF_ROOT)/results/sweep.json.
+bench-fe-concurrency:
+	@bash -c 'set -euo pipefail; \
+		ROOT="$(WEBAPP_PERF_ROOT)"; \
+		source "$$ROOT/lib/coord.sh"; \
+		acquire_lock bench 1800 || { echo "bench-fe-concurrency: could not acquire bench lock" >&2; exit 1; }; \
+		log_event sweep "bench lock acquired (concurrency sweep)"; \
+		trap "release_lock bench" EXIT; \
+		bash "$$ROOT/bench/sweep.sh" $(SWEEP_ARGS)'
 
 check-deploy-env:
 	@$(foreach v,$(REQUIRED_DEPLOY_VARS),$(if $(value $(v)),,$(error $(v) is not set — copy .env.example to .env and fill it in)))
