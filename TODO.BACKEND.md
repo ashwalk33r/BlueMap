@@ -42,10 +42,12 @@ are dead weight in the jar for those users (they get on-the-fly or no compressio
 ## 🟡 OPTIONAL — expose new webapp knobs as server-admin config
 
 ### 4. settings.json generation for tile-loading knobs
-The webapp reads `tileLoadConcurrency` (default 16) and `tileLoadBackoffMs` (default 200) from
-`settings.json`, falling back to defaults when absent — so it works out-of-box. To let server admins
-tune them via the BlueMap plugin config, the **Java settings.json generator** (WebAppConfig / the code
-that writes the served `settings.json`) would need to emit these fields from plugin config.
+The JS source now carries the optimized defaults directly (`maxConcurrentLoads=16`,
+`loadBackoffMs=200ms`, `PRBMLoader.useWorker=true`, `pauseUpdatesWhenHidden=true`) — confirmed at
+the concurrency-sweep knee (parse-bound, 1 Gbit/s non-binding). These take effect even when the
+backend-generated `settings.json` omits these fields entirely, so **the win ships with no backend
+change required**. Exposing the knobs in `settings.json` via Java plugin config (WebFilesManager
+/ WebAppConfig) is a nice-to-have for server-admin tunability only.
 Not required; only for admin-configurability.
 
 ---

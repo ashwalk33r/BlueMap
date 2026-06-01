@@ -35,9 +35,11 @@ export class TileManager {
     // Max tiles loading concurrently per manager, and the fallback re-check delay
     // when that cap is hit. Tunable via settings.json (tileLoadConcurrency /
     // tileLoadBackoffMs); BlueMapApp sets these after loading settings.
-    // Legacy values were 8 / 1000ms — they left the (HTTP/2) origin idle.
-    static maxConcurrentLoads = 8;
-    static loadBackoffMs = 1000;
+    // Optimized defaults: concurrency=16 (sweep knee, parse-bound, 1 Gbit/s non-binding),
+    // backoff=200ms. Legacy was concurrency=8 / backoff=1000ms — left the HTTP/2 origin idle.
+    // To revert to legacy: change 16->8 and 200->1000 below.
+    static maxConcurrentLoads = 16;
+    static loadBackoffMs = 200;
 
     /**
      * @param tileLoader {TileLoader | LowresTileLoader}
