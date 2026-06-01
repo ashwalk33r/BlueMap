@@ -33,12 +33,17 @@
 </template>
 
 <script>
+import {defineAsyncComponent} from "vue";
 import SideMenu from "./SideMenu.vue";
 import SimpleButton from "./SimpleButton.vue";
-import SettingsMenu from "./SettingsMenu.vue";
 import {MainMenu} from "../../js/MainMenu";
-import MarkerSetMenu from "./MarkerSetMenu.vue";
 import MapButton from "./MapButton.vue";
+
+// Settings + markers sub-pages are only rendered when the user navigates into
+// them (currentPage().id === 'settings' / 'markers'), so split them — and the
+// marker UI subtree MarkerSetMenu pulls in — out of the entry chunk.
+const SettingsMenu = defineAsyncComponent(() => import("./SettingsMenu.vue"));
+const MarkerSetMenu = defineAsyncComponent(() => import("./MarkerSetMenu.vue"));
 
 export default {
   name: "MainMenu",
