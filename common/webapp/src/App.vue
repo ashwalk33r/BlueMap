@@ -9,10 +9,15 @@
 </template>
 
 <script>
+import {defineAsyncComponent} from "vue";
 import ControlBar from "./components/ControlBar/ControlBar.vue";
 import MainMenu from "./components/Menu/MainMenu.vue";
-import FreeFlightMobileControls from "./components/Controls/FreeFlightMobileControls.vue";
-import ZoomButtons from "./components/Controls/ZoomButtons.vue";
+
+// Non-critical controls: only rendered conditionally (free-flight mode / when
+// zoom buttons are enabled), so split them out of the entry chunk and fetch
+// lazily. ControlBar + MainMenu stay eager (always mounted on first paint).
+const FreeFlightMobileControls = defineAsyncComponent(() => import("./components/Controls/FreeFlightMobileControls.vue"));
+const ZoomButtons = defineAsyncComponent(() => import("./components/Controls/ZoomButtons.vue"));
 
 export default {
   name: 'App',

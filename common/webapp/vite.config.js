@@ -1,9 +1,27 @@
+/* eslint-env node */
 import {fileURLToPath, URL} from 'node:url'
 
 import {defineConfig} from 'vite'
 import vue from '@vitejs/plugin-vue'
 import viteCompression from 'vite-plugin-compression'
 import {VitePWA} from 'vite-plugin-pwa'
+
+// Bundle analyzer: gated by VITE_ANALYZE=true so normal/CI builds stay lean.
+// Emits an interactive treemap + raw stats JSON to the perf results dir
+// (VITE_ANALYZE_OUT, default the repo-level results/) for tracking the
+// entry-chunk size across the code-split work. rollup-plugin-visualizer is
+// ESM-only, so it's dynamically imported here (a static import breaks esbuild's
+// CJS config bundling).
+const analyzeEnabled = (process.env.VITE_ANALYZE || '').toLowerCase() === 'true'
+const analyzeOutDir = process.env.VITE_ANALYZE_OUT || '/home/ubuntu24/webapp-perf/results'
+async function buildAnalyzePlugins() {
+    if (!analyzeEnabled) return []
+    const {visualizer} = await import('rollup-plugin-visualizer')
+    return [
+        visualizer({filename: `${analyzeOutDir}/treemap-uc.html`, template: 'treemap', gzipSize: true, brotliSize: true}),
+        visualizer({filename: `${analyzeOutDir}/treemap-uc.json`, template: 'raw-data', gzipSize: true, brotliSize: true}),
+    ]
+}
 
 // Precompress build output so nginx can serve max-level static .br/.gz via
 // brotli_static/gzip_static (offloads on-the-fly compression). VITE_PRECOMPRESS:
@@ -39,8 +57,8 @@ const pwaPlugins = pwaEnabled ? [VitePWA({
 })] : []
 
 // noinspection JSUnusedGlobalSymbols
-export default defineConfig({
-    plugins: [vue(), ...compressionPlugins, ...pwaPlugins],
+export default defineConfig(async () => ({
+    plugins: [vue(), ...compressionPlugins, ...pwaPlugins, ...(await buildAnalyzePlugins())],
     base: './',
     resolve: {
         alias: {
@@ -84,4 +102,4 @@ export default defineConfig({
             }
         }
     }
-})
+}))
