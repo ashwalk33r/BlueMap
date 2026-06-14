@@ -5,7 +5,7 @@
 
 REQUIRED_DEPLOY_VARS := DEPLOY_RSYNC_HOST DEPLOY_SSH_HOST DEPLOY_ROOT DEPLOY_USER DEPLOY_GROUP
 
-.PHONY: build webapp fmt dos2unix clean deploy deploy-fspermissions check-deploy-env bench-fe bench-fe-concurrency
+.PHONY: build webapp fmt dos2unix clean deploy deploy-fspermissions deploy-reload check-deploy-env bench-fe bench-fe-concurrency
 
 # webapp-perf harness root (shared infra: serve/, bench/, lib/coord.sh, results/).
 WEBAPP_PERF_ROOT ?= /home/ubuntu24/webapp-perf
@@ -38,6 +38,15 @@ deploy: check-deploy-env deploy-fspermissions
 	rsync -rltvz --delete --exclude='maps' --omit-dir-times \
 		--chmod=Dug=rwx,Do=rx,Dg+s,Fug=rw,Fo=r \
 		dist/webapp/ $(DEPLOY_RSYNC_HOST):$(DEPLOY_ROOT)/
+	$(MAKE) deploy-reload
+
+# Graceful nginx reload — MUST run after every deploy. The webroot serves with
+# `open_file_cache_valid 3600s`, so after rsync --delete swaps in new hashed
+# assets, nginx keeps serving the previous (cached) index.html for up to an hour;
+# it points at the just-deleted asset hashes → 404 until the cache revalidates.
+# A reload flushes open_file_cache instantly (and is graceful: no dropped conns).
+deploy-reload: check-deploy-env
+	ssh $(DEPLOY_SSH_HOST) 'sudo nginx -t && sudo systemctl reload nginx'
 
 # Repair/normalize webroot ownership & permissions so both `admin` and the unprivileged
 # `user` (deploy account) can write via the shared www-data group. Idempotent; runs as a
