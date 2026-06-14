@@ -6,7 +6,9 @@ import vue from '@vitejs/plugin-vue'
 import viteCompression from 'vite-plugin-compression'
 import {VitePWA} from 'vite-plugin-pwa'
 
-const COMPRESS_FILTER = /\.(js|mjs|json|css|html|svg|conf|webmanifest)$/i
+// woff2/woff are already compressed → excluded; ttf is NOT, and the fallback font is the
+// single largest asset nginx gzip_static-serves, so include it.
+const COMPRESS_FILTER = /\.(js|mjs|json|css|html|svg|conf|webmanifest|ttf)$/i
 
 // noinspection JSUnusedGlobalSymbols
 export default defineConfig(async ({mode}) => {
@@ -40,9 +42,9 @@ export default defineConfig(async ({mode}) => {
     const precompress = (env.VITE_PRECOMPRESS || 'both').toLowerCase()
     const compressionPlugins = []
     if (precompress === 'both' || precompress === 'gzip')
-        compressionPlugins.push(viteCompression({algorithm: 'gzip', ext: '.gz', filter: COMPRESS_FILTER, threshold: 1024, deleteOriginFile: false}))
+        compressionPlugins.push(viteCompression({algorithm: 'gzip', ext: '.gz', filter: COMPRESS_FILTER, threshold: 0, deleteOriginFile: false}))
     if (precompress === 'both' || precompress === 'brotli')
-        compressionPlugins.push(viteCompression({algorithm: 'brotliCompress', ext: '.br', filter: COMPRESS_FILTER, threshold: 1024, deleteOriginFile: false}))
+        compressionPlugins.push(viteCompression({algorithm: 'brotliCompress', ext: '.br', filter: COMPRESS_FILTER, threshold: 0, deleteOriginFile: false}))
 
     // Service worker: cache-first precache of the immutable hashed APP SHELL only
     // (js/css/html/woff2). It must NEVER cache map tiles (/maps/**) or live/*.json —
