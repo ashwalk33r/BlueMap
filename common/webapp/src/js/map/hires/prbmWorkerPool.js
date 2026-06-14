@@ -34,8 +34,14 @@ class PrbmWorkerPool {
         this.next = (this.next + 1) % this.size;
         return new Promise((resolve, reject) => {
             this.pending.set(id, { resolve, reject });
-            // buffer is transferred to the worker (zero-copy); caller must not reuse it
-            worker.postMessage({ id, buffer, offset }, [buffer]);
+            // Transfer a COPY into the worker, never the caller's buffer. The input ArrayBuffer is
+            // owned by three.js FileLoader (response cache + in-flight same-URL dedup) and is reused
+            // by other consumers; detaching it via transfer corrupts those reuses ("Cannot perform
+            // Construct on a detached ArrayBuffer" → blank/garbage tiles: blue stripe, stray
+            // translucency). The worker decodes into this copy and transfers the decoded buffers
+            // back zero-copy, so off-main-thread decode is preserved.
+            const copy = buffer.slice(0);
+            worker.postMessage({ id, buffer: copy, offset }, [copy]);
         });
     }
 }
